@@ -11,6 +11,10 @@ const taskSchema = new Schema(
       type: String,
       required: true,
     },
+    subLevel:{
+      type: String,
+      required: true,
+    },
     parentId: {
       type: String,
       required: true,
