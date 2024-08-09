@@ -3,7 +3,7 @@ import Joi from "joi";
 export const createTaskSchema = Joi.object({
   text: Joi.string().required(),
   date: Joi.string().required(),
-  subLevel: Joi.string(),
+  subLevel: Joi.number(),
   parentId: Joi.string().required(),
  
 });
