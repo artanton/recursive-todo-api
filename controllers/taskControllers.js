@@ -31,29 +31,28 @@ const updateTask = async (req, res) => {
 
 const deleteTask = async (req, res) => {
   const { id } = req.params;
-  
-  const allTasks = await tasksService.listTasks();
-  
-  const taskMap = groupTasksByParentId(allTasks);
 
-  const deleteTaskChain = async (id )=> {
-    if (taskMap[id]) {
-      taskMap[id].forEach(subtask => deleteTaskChain(subtask.id));
-    }
+  // const allTasks = await tasksService.listTasks();
 
-    const result = await tasksService.removeTask({ _id: id });
-    return result;
-  };
+  // const taskMap = groupTasksByParentId(allTasks);
 
-  const result = await deleteTaskChain(id);
-  
-    
-    if (!result) {
-      throw HttpError(404, `Not found`);
-    }
-    res.json({_id:id, message: "Delete success" });
-  
-  
+  // const deleteTaskChain = async (id )=> {
+  //   if (taskMap[id]) {
+  //     taskMap[id].forEach(subtask => deleteTaskChain(subtask.id));
+  //   }
+
+  //   const result = await tasksService.removeTask({ _id: id });
+  //   return result;
+  // };
+
+  // const result = await deleteTaskChain(id);
+
+  const result = await tasksService.removeTask(id);
+
+  if (!result) {
+    throw HttpError(404, `Not found`);
+  }
+  res.json({ _id: id, message: "Delete success" });
 };
 
 export default {
