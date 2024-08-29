@@ -22,7 +22,7 @@ tasksRouter.post(
   tasksController.createTask
 );
 
-tasksRouter.put(
+tasksRouter.patch(
   "/:id",
   isValidId,
   validateBody(updateTaskSchema),
