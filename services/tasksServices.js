@@ -9,7 +9,9 @@ export const addTask = async (data) => {
 };
 
 export const updateTaskById = (filter, data) =>
-  Task.findOneAndUpdate(filter, data);
+Task.findOneAndUpdate(filter, data);
+
+
 
 
 export const removeTask = async (id) => {
