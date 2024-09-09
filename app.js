@@ -5,7 +5,7 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 
 import tasksRouter from "./routes/tasksRouter.js";
-// import authRouter from "./routes/authRouter.js";
+import authRouter from "./routes/authRouter.js";
 
 dotenv.config()
 
@@ -20,6 +20,7 @@ app.use(express.static("public"));
 
 
 app.use("/api/tasks", tasksRouter);
+app.use ("/api/users", authRouter);
 
 app.use((_, res) => {
   res.status(404).json({ message: "Route not found" });
