@@ -5,24 +5,30 @@ import ctrlWrapper from "../decorators/ctrlWrapper.js";
 import groupTasksByParentId from "../helpers/taskMap.js";
 
 const getAllTasks = async (req, res) => {
-  const result = await tasksService.listTasks();
+  const { _id: owner } = req.user;
+  const result = await tasksService.listTasks( owner );
   res.json(result);
 };
 
 const createTask = async (req, res) => {
-  const result = await tasksService.addTask({ ...req.body });
+  const { _id: owner } = req.user;
+  const result = await tasksService.addTask({ ...req.body, owner });
 
   res.status(201).json(result);
 };
 
 const updateTask = async (req, res) => {
+  const { _id: owner } = req.user;
   const data = req.body;
   if (!data.text) {
     throw HttpError(400, "Body must have updated text");
   }
   const { id } = req.params;
 
-  const result = await tasksService.updateTaskById({ _id: id }, req.body);
+  const result = await tasksService.updateTaskById(
+    { _id: id, owner },
+    req.body
+  );
   if (!result) {
     throw HttpError(404, `Not found`);
   }
@@ -31,23 +37,9 @@ const updateTask = async (req, res) => {
 
 const deleteTask = async (req, res) => {
   const { id } = req.params;
+  const {_id:owner}= req.user;
 
-  // const allTasks = await tasksService.listTasks();
-
-  // const taskMap = groupTasksByParentId(allTasks);
-
-  // const deleteTaskChain = async (id )=> {
-  //   if (taskMap[id]) {
-  //     taskMap[id].forEach(subtask => deleteTaskChain(subtask.id));
-  //   }
-
-  //   const result = await tasksService.removeTask({ _id: id });
-  //   return result;
-  // };
-
-  // const result = await deleteTaskChain(id);
-
-  const result = await tasksService.removeTask(id);
+  const result = await tasksService.removeTask({_id:id, owner});
 
   if (!result) {
     throw HttpError(404, `Not found`);

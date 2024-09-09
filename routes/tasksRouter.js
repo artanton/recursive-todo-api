@@ -7,9 +7,10 @@ import {
 } from "../schemas/tasksSchemas.js";
 import validateBody from "../decorators/validateBody.js";
 import isValidId from "../middlewares/isValidId.js";
+import authentificate from "../middlewares/authentificate.js";
 
 const tasksRouter = express.Router();
-
+tasksRouter.use(authentificate);
 
 
 tasksRouter.get("/", tasksController.getAllTasks);

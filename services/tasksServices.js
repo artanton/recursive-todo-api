@@ -1,7 +1,7 @@
 import groupTasksByParentId from "../helpers/taskMap.js";
 import Task from "../models/task.js";
 
-export const listTasks = () => Task.find();
+export const listTasks = (owner={}) => Task.find({owner});
 
 export const addTask = async (data) => {
   const newTask = await Task.create(data);
@@ -22,7 +22,7 @@ export const removeTask = async (id) => {
     if (taskMap[id]) {
       taskMap[id].forEach((subtask) => deleteTaskChain(subtask.id));
     }
-    const result = await Task.findOneAndDelete({ _id: id });
+    const result = await Task.findOneAndDelete(filter);
     return result;
   };
 
