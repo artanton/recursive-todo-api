@@ -30,7 +30,7 @@ const signUp = async (req, res) => {
   const verifyEmail = {
     from: "ToDo List App",
     to: email,
-    subject : "Verification",
+    subject: "Verification",
     html: `You just registred in the ToDo List App <a href = "${BASE_URL}/api/users/verify/${verificationCode}">"Click this link verify"</a> or ignor it if you are not.`,
   };
 
@@ -41,6 +41,7 @@ const signUp = async (req, res) => {
 
   res.status(201).json({
     email: newUser.email,
+    name: newUser.name,
     avatar: newUser.avatarURL,
   });
 };
@@ -69,10 +70,13 @@ const signIn = async (req, res) => {
   await authService.updateUser({ _id: id }, { token });
 
   res.json({
-    name: isUserExist.name,
-    avatarURL: isUserExist.avatarURL,
+    user: {
+      name: isUserExist.name,
+      email: isUserExist.email,
+      avatarURL: isUserExist.avatarURL,
+    },
     token: token,
-   });
+  });
 };
 
 const verify = async (req, res) => {
@@ -136,7 +140,7 @@ const update = async (req, res) => {
 
 const getCurrent = (req, res) => {
   const { email } = req.user;
-  res.json({ email});
+  res.json({ email });
 };
 
 const logout = async (req, res) => {
