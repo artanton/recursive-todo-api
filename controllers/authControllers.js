@@ -68,7 +68,11 @@ const signIn = async (req, res) => {
   const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "24h" });
   await authService.updateUser({ _id: id }, { token });
 
-  res.json({ token });
+  res.json({
+    name: isUserExist.name,
+    avatarURL: isUserExist.avatarURL,
+    token: token,
+   });
 };
 
 const verify = async (req, res) => {
@@ -131,8 +135,8 @@ const update = async (req, res) => {
 };
 
 const getCurrent = (req, res) => {
-  const { email, subscription } = req.user;
-  res.json({ email, subscription });
+  const { email } = req.user;
+  res.json({ email});
 };
 
 const logout = async (req, res) => {
