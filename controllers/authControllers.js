@@ -43,6 +43,7 @@ const signUp = async (req, res) => {
     email: newUser.email,
     name: newUser.name,
     avatar: newUser.avatarURL,
+    verify: newUser.verify,
   });
 };
 
@@ -53,7 +54,7 @@ const signIn = async (req, res) => {
     throw HttpError(401, "Email or password is wrong");
   }
   if (!isUserExist.verify) {
-    throw HttpError(401, "email is not verify");
+    throw HttpError(401, "Email is not verified");
   }
   const comparePassword = await authService.validatePassword(
     password,
@@ -74,6 +75,7 @@ const signIn = async (req, res) => {
       name: isUserExist.name,
       email: isUserExist.email,
       avatarURL: isUserExist.avatarURL,
+      verify: isUserExist.verify,
     },
     token: token,
   });
@@ -139,8 +141,9 @@ const update = async (req, res) => {
 };
 
 const getCurrent = (req, res) => {
-  const { email } = req.user;
-  res.json({ email });
+  const { name, email, avatarURL } = req.user;
+
+  res.json({ name, email, avatarURL });
 };
 
 const logout = async (req, res) => {
