@@ -31,7 +31,7 @@ const signUp = async (req, res) => {
     from: "ToDo List App",
     to: email,
     subject: "Verification",
-    html: `You just registred in the ToDo List App <a href = "${BASE_URL}/api/users/verify/${verificationCode}">"Click this link verify"</a> or ignor it if you are not.`,
+    html: `You just registred in the ToDo List App <a href = "${BASE_URL}/api/users/verify/${verificationCode}">"Click this link to verify"</a> or ignor it if you are not.`,
   };
 
   await sendEmail(verifyEmail);
@@ -53,15 +53,16 @@ const signIn = async (req, res) => {
   if (!isUserExist) {
     throw HttpError(401, "Email or password is wrong");
   }
-  if (!isUserExist.verify) {
-    throw HttpError(401, "Email is not verified");
-  }
+  
   const comparePassword = await authService.validatePassword(
     password,
     isUserExist.password
   );
   if (!comparePassword) {
     throw HttpError(401, "Email or password is wrong");
+  }
+  if (!isUserExist.verify) {
+    throw HttpError(401, "Email is not verified");
   }
   const { _id: id } = isUserExist;
   const payload = {
@@ -92,9 +93,7 @@ const verify = async (req, res) => {
     { verify: true, verificationCode: "" }
   );
 
-  res.status(200).json({
-    message: "Verification successful",
-  });
+  res.status(200).json({ message: "Verification successful. You can Login now" });
 };
 
 const resendVerify = async (req, res) => {
@@ -141,9 +140,9 @@ const update = async (req, res) => {
 };
 
 const getCurrent = (req, res) => {
-  const { name, email, avatarURL } = req.user;
+  const { name, email, avatarURL , verify} = req.user;
 
-  res.json({ name, email, avatarURL });
+  res.json({ name, email, avatarURL, verify });
 };
 
 const logout = async (req, res) => {
