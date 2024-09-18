@@ -37,7 +37,7 @@ const updateTask = async (req, res) => {
 
 const deleteTask = async (req, res) => {
   const { id } = req.params;
-  const {_id:owner}= req.user;
+  const {_id: owner}= req.user;
 
   const result = await tasksService.removeTask({_id:id, owner});
 
