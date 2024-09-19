@@ -33,7 +33,7 @@ authRouter.post (
 );
 
 authRouter.patch(
-  "/avatars",
+  "/user",
   upload.single("avatarURL"),
   validateBody(updateSchema),
   authentificate,
