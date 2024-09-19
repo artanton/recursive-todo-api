@@ -151,16 +151,19 @@ const update = async (req, res) => {
     const newAvatar = path.join("avatars", filename);
 
     data.avatarURL = newAvatar;
+
+    const isGravatar = avatarURL.split('/').includes("gravatar.com")
+    if(!isGravatar){
     const toDelAvatar = path.join(toDelPath, avatarURL);
 
-    await fs.rm(toDelAvatar);
+    await fs.rm(toDelAvatar);}
   }
   if (!data.password && !data.avatarURL) {
     throw HttpError(401, "There is no data to update");
   }
   await authService.updateUser({ _id }, data);
 
-  res.status(200).json(data);
+  res.status(200).json(data.avatarURL);
 };
 
 const getCurrent = (req, res) => {
