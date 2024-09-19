@@ -10,4 +10,4 @@ export const signup = async (data) => {
 export const validatePassword = async (password, hashPassword) =>
   await bcrypt.compare(password, hashPassword);
 
-export const updateUser = (filter, data) => User.findOneAndUpdate(filter, data);
+export const updateUser = (filter, data) => User.findOneAndUpdate(filter,{ ...data},  { new: true });

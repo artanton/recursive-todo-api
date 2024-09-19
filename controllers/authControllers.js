@@ -4,6 +4,7 @@ import fs from "fs/promises";
 import path from "path";
 import Jimp from "jimp";
 import gravatar from "gravatar-url";
+import bcrypt from "bcrypt";
 
 import * as authService from "../services/authServices.js";
 import HttpError from "../helpers/HttpError.js";
@@ -12,6 +13,7 @@ import sendEmail from "../helpers/sendEmail.js";
 import { nanoid } from "nanoid";
 
 const avatarsPath = path.resolve("public", "avatars");
+const toDelPath = path.resolve("public");
 
 dotenv.config();
 const { JWT_SECRET, BASE_URL } = process.env;
@@ -53,7 +55,7 @@ const signIn = async (req, res) => {
   if (!isUserExist) {
     throw HttpError(401, "Email or password is wrong");
   }
-  
+
   const comparePassword = await authService.validatePassword(
     password,
     isUserExist.password
@@ -93,7 +95,9 @@ const verify = async (req, res) => {
     { verify: true, verificationCode: "" }
   );
 
-  res.status(200).json({ message: "Verification successful. You can Login now" });
+  res
+    .status(200)
+    .json({ message: "Verification successful. You can Login now" });
 };
 
 const resendVerify = async (req, res) => {
@@ -118,29 +122,50 @@ const resendVerify = async (req, res) => {
 };
 
 const update = async (req, res) => {
-  const { _id } = req.user;
-  if (!req.file) {
-    throw HttpError(401, "No file uploaded");
+  const { _id, password, avatarURL } = req.user;
+  const { oldPassword, newPassword } = req.body;
+  const data = {};
+
+  const comparePassword = await authService.validatePassword(
+    oldPassword,
+    password
+  );
+
+  if (!comparePassword) {
+    throw HttpError(400, "Invalid password");
   }
-  const { path: oldPath, filename } = req.file;
+  if (newPassword) {
+    const hashPassword = await bcrypt.hash(newPassword, 10);
+    data.password = hashPassword;
+    console.log(data.password);
+  }
 
-  const image = await Jimp.read(oldPath);
-  image.resize(250, 250).write(oldPath);
+  if (req.file) {
+    const { path: oldPath, filename } = req.file;
 
-  const newPath = path.join(avatarsPath, filename);
+    const image = await Jimp.read(oldPath);
+    image.resize(250, 250).write(oldPath);
 
-  await fs.rename(oldPath, newPath);
-  const avatarURL = path.join("avatars", filename);
+    const newPath = path.join(avatarsPath, filename);
 
-  await authService.updateUser({ _id }, { avatarURL });
+    await fs.rename(oldPath, newPath);
+    const newAvatar = path.join("avatars", filename);
 
-  res.status(200).json({
-    avatarURL,
-  });
+    data.avatarURL = newAvatar;
+    const toDelAvatar = path.join(toDelPath, avatarURL);
+
+    await fs.rm(toDelAvatar);
+  }
+  if (!data.password && !data.avatarURL) {
+    throw HttpError(401, "There is no data to update");
+  }
+  await authService.updateUser({ _id }, data);
+
+  res.status(200).json(data);
 };
 
 const getCurrent = (req, res) => {
-  const { name, email, avatarURL , verify} = req.user;
+  const { name, email, avatarURL, verify } = req.user;
 
   res.json({ name, email, avatarURL, verify });
 };
