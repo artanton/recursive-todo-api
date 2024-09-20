@@ -121,26 +121,44 @@ const resendVerify = async (req, res) => {
   res.json({ message: "Verification email sent" });
 };
 
-const update = async (req, res) => {
-  const { _id, password, avatarURL } = req.user;
+const updatePassword = async (req, res) => {
+  const { _id, password,} = req.user;
   const { oldPassword, newPassword } = req.body;
-  const data = {};
-
+  
+  
+  if(!oldPassword || !newPassword){
+    throw HttpError(401, 'There is no data to update');
+  }
+  if(oldPassword === newPassword){
+    throw HttpError(401, 'There is no data to update');
+  }
+  console.log(oldPassword);
+  console.log(password);
   const comparePassword = await authService.validatePassword(
     oldPassword,
     password
   );
-
+  console.log(comparePassword);
   if (!comparePassword) {
     throw HttpError(400, "Invalid password");
   }
-  if (newPassword) {
+  
     const hashPassword = await bcrypt.hash(newPassword, 10);
-    data.password = hashPassword;
-  }
+    await authService.updateUser({ _id },{password: hashPassword});
+  
 
-  if (req.file) {
-    const { path: oldPath, filename } = req.file;
+  res.status(200).json({message: "User password update success"});
+};
+
+const updateAvatar = async (req, res) => {
+  const { _id, avatarURL } = req.user;
+  const { path: oldPath, filename } = req.file;
+  
+  const data={};
+
+  if (!req.file) {
+    throw HttpError(401, "There is no data to update");
+  }
 
     const image = await Jimp.read(oldPath);
     image.resize(250, 250).write(oldPath);
@@ -157,10 +175,7 @@ const update = async (req, res) => {
     // const toDelAvatar = path.join(toDelPath, avatarURL);
 
     // await fs.rm(toDelAvatar);}
-  }
-  if (!data.password && !data.avatarURL) {
-    throw HttpError(401, "There is no data to update");
-  }
+  
   await authService.updateUser({ _id }, data);
 
   res.status(200).json(data.avatarURL);
@@ -185,7 +200,53 @@ export default {
   signIn: ctrlWrapper(signIn),
   verify: ctrlWrapper(verify),
   resendVerify: ctrlWrapper(resendVerify),
-  update: ctrlWrapper(update),
+  updateAvatar: ctrlWrapper(updateAvatar),
+  updatePassword: ctrlWrapper(updatePassword),
   getCurrent: ctrlWrapper(getCurrent),
   logout: ctrlWrapper(logout),
 };
+
+// const update = async (req, res) => {
+//   const { _id, password, avatarURL } = req.user;
+//   const { oldPassword, newPassword } = req.body;
+//   const data = {};
+
+//   const comparePassword = await authService.validatePassword(
+//     oldPassword,
+//     password
+//   );
+
+//   if (!comparePassword) {
+//     throw HttpError(400, "Invalid password");
+//   }
+//   if (newPassword) {
+//     const hashPassword = await bcrypt.hash(newPassword, 10);
+//     data.password = hashPassword;
+//   }
+
+//   if (req.file) {
+//     const { path: oldPath, filename } = req.file;
+
+//     const image = await Jimp.read(oldPath);
+//     image.resize(250, 250).write(oldPath);
+
+//     const newPath = path.join(avatarsPath, filename);
+
+//     await fs.rename(oldPath, newPath);
+//     const newAvatar = path.join("avatars", filename);
+
+//     data.avatarURL = newAvatar;
+
+//     const isGravatar = avatarURL.split('/').includes("gravatar.com")
+//     if(!isGravatar){
+//     const toDelAvatar = path.join(toDelPath, avatarURL);
+
+//     await fs.rm(toDelAvatar);}
+//   }
+//   if (!data.password && !data.avatarURL) {
+//     throw HttpError(401, "There is no data to update");
+//   }
+//   await authService.updateUser({ _id }, data);
+
+//   res.status(200).json(data.avatarURL);
+// };

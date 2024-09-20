@@ -1,6 +1,6 @@
 import express from "express";
 import authController from "../controllers/authControllers.js";
-import { emailSchema, signInSchema, signUpSchema, updateSchema } from "../schemas/userSchemas.js";
+import { avatarSchema, emailSchema, signInSchema, signUpSchema, updateSchema } from "../schemas/userSchemas.js";
 import validateBody from "../decorators/validateBody.js";
 import authentificate from "../middlewares/authentificate.js";
 import upload from "../middlewares/upload.js";
@@ -33,12 +33,20 @@ authRouter.post (
 );
 
 authRouter.patch(
-  "/user",
+  "/avatar",
+  validateBody(avatarSchema),
   upload.single("avatarURL"),
+  authentificate,
+
+  authController.updateAvatar
+);
+
+authRouter.patch(
+  "/update",
   validateBody(updateSchema),
   authentificate,
 
-  authController.update
+  authController.updatePassword
 );
 
 authRouter.get("/current", authentificate, authController.getCurrent);
