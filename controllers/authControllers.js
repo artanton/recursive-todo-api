@@ -132,13 +132,12 @@ const updatePassword = async (req, res) => {
   if(oldPassword === newPassword){
     throw HttpError(401, 'There is no data to update');
   }
-  console.log(oldPassword);
-  console.log(password);
+  
   const comparePassword = await authService.validatePassword(
     oldPassword,
     password
   );
-  console.log(comparePassword);
+
   if (!comparePassword) {
     throw HttpError(400, "Invalid password");
   }
@@ -155,7 +154,7 @@ const updateAvatar = async (req, res) => {
   const { path: oldPath, filename } = req.file;
   
   const data={};
-
+console.log(avatarURL);
   if (!req.file) {
     throw HttpError(401, "There is no data to update");
   }
@@ -170,11 +169,11 @@ const updateAvatar = async (req, res) => {
 
     data.avatarURL = newAvatar;
 
-    // const isGravatar = avatarURL.split('/').includes("gravatar.com")
-    // if(!isGravatar){
-    // const toDelAvatar = path.join(toDelPath, avatarURL);
+    const isGravatar = avatarURL.split('/').includes("gravatar.com")
+    if(!isGravatar){
+    const oldAvatar = path.join(toDelPath, avatarURL);
 
-    // await fs.rm(toDelAvatar);}
+    await fs.rm(oldAvatar);}
   
   await authService.updateUser({ _id }, data);
 
