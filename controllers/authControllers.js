@@ -19,27 +19,7 @@ dotenv.config();
 const { JWT_SECRET, BASE_URL } = process.env;
 
 const signUp = async (req, res) => {
-  const { email } = req.body;
-
-  const isUserExist = await authService.findUser({ email });
-  if (isUserExist) {
-    throw HttpError(409, "Email in use");
-  }
-
-  const verificationCode = nanoid();
-  const newUser = await authService.signup({ ...req.body, verificationCode });
-
-  const verifyEmail = {
-    from: "ToDo List App",
-    to: email,
-    subject: "Verification",
-    html: `You just registred in the ToDo List App <a href = "${BASE_URL}/api/users/verify/${verificationCode}">"Click this link to verify"</a> or ignor it if you are not.`,
-  };
-
-  await sendEmail(verifyEmail);
-
-  const avatarURL = gravatar(email, { s: 250 });
-  await authService.updateUser({ email }, { avatarURL });
+  const newUser = await authService.signup(req.body);
 
   res.status(201).json({
     email: newUser.email,
@@ -50,38 +30,8 @@ const signUp = async (req, res) => {
 };
 
 const signIn = async (req, res) => {
-  const { email, password } = req.body;
-  const isUserExist = await authService.findUser({ email });
-  if (!isUserExist) {
-    throw HttpError(401, "Email or password is wrong");
-  }
-
-  const comparePassword = await authService.validatePassword(
-    password,
-    isUserExist.password
-  );
-  if (!comparePassword) {
-    throw HttpError(401, "Email or password is wrong");
-  }
-  if (!isUserExist.verify) {
-    throw HttpError(401, "Email is not verified");
-  }
-  const { _id: id } = isUserExist;
-  const payload = {
-    id,
-  };
-  const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "24h" });
-  await authService.updateUser({ _id: id }, { token });
-
-  res.json({
-    user: {
-      name: isUserExist.name,
-      email: isUserExist.email,
-      avatarURL: isUserExist.avatarURL,
-      verify: isUserExist.verify,
-    },
-    token: token,
-  });
+  const loggedInUser = await authService.signin(req.body);
+  res.json(loggedInUser);
 };
 
 const verify = async (req, res) => {
@@ -103,81 +53,45 @@ const verify = async (req, res) => {
 const resendVerify = async (req, res) => {
   const { email } = req.body;
   const user = await authService.findUser({ email });
+
   if (!user) {
     throw HttpError(404, "User not found");
   }
   if (user.verify) {
     throw HttpError(400, "Verification has already been passed");
   }
-  const verifyEmail = {
-    from: "ToDo List App",
-    to: email,
-    subject: "Verification",
-    html: `You just registred in the ToDo List App <a href = "${BASE_URL}/api/users/verify/${user.verificationCode}">"Click this link verify"</a> or ignor it if you are not.`,
-  };
 
-  await sendEmail(verifyEmail);
+  await authService.emailSender(email, user.verificationCode);
 
   res.json({ message: "Verification email sent" });
 };
 
 const updatePassword = async (req, res) => {
-  const { _id, password,} = req.user;
-  const { oldPassword, newPassword } = req.body;
-  
-  
-  if(!oldPassword || !newPassword){
-    throw HttpError(401, 'There is no data to update');
-  }
-  if(oldPassword === newPassword){
-    throw HttpError(401, 'There is no data to update');
-  }
-  
-  const comparePassword = await authService.validatePassword(
-    oldPassword,
-    password
-  );
+const {_id, password} = req.user;
+const { oldPassword, newPassword } = req.body;
 
-  if (!comparePassword) {
-    throw HttpError(400, "Invalid password");
-  }
-  
-    const hashPassword = await bcrypt.hash(newPassword, 10);
-    await authService.updateUser({ _id },{password: hashPassword});
-  
 
-  res.status(200).json({message: "User password update success"});
+await authService.passwordUpdate(
+  {_id, password}, 
+  {oldPassword, newPassword}
+);
+  
+ res.status(200).json({ message: "User password update success" });
 };
 
 const updateAvatar = async (req, res) => {
   const { _id, avatarURL } = req.user;
   const { path: oldPath, filename } = req.file;
   
-  const data={};
-console.log(avatarURL);
   if (!req.file) {
     throw HttpError(401, "There is no data to update");
   }
 
-    const image = await Jimp.read(oldPath);
-    image.resize(250, 250).write(oldPath);
+  const data = {_id, avatarURL, oldPath, filename };
 
-    const newPath = path.join(avatarsPath, filename);
-
-    await fs.rename(oldPath, newPath);
-    const newAvatar = path.join("avatars", filename);
-
-    data.avatarURL = newAvatar;
-
-    const isGravatar = avatarURL.split('/').includes("gravatar.com")
-    if(!isGravatar){
-    const oldAvatar = path.join(toDelPath, avatarURL);
-
-    await fs.rm(oldAvatar);}
+  const newAvatar = await authService.avatarUpdate(data);
   
-  await authService.updateUser({ _id }, data);
-
-  res.status(200).json(data.avatarURL);
+  res.status(200).json(newAvatar);
 };
 
 const getCurrent = (req, res) => {
@@ -189,8 +103,7 @@ const getCurrent = (req, res) => {
 const logout = async (req, res) => {
   const { _id } = req.user;
 
-  await authService.updateUser({ _id }, { token: "" });
-
+  await authService.updateUser({ _id }, {authinticate: false});
   res.status(204).json("No Content");
 };
 
