@@ -24,10 +24,6 @@ const userSchema = new Schema(
       required: [true, "Password is required"],
     },
 
-    token: {
-      type: String,
-      default: null,
-    },
     verify: {
       type: Boolean,
       default: false,
@@ -35,6 +31,10 @@ const userSchema = new Schema(
     verificationCode: {
       type: String,
     },
+    authinticate:{
+      type: Boolean,
+      default: false,
+    }
   },
   { versionKey: false, timestamps: true }
 );
