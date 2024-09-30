@@ -8,12 +8,11 @@ import fs from "fs/promises";
 import path from "path";
 import Jimp from "jimp";
 import gravatar from "gravatar-url";
-import ctrlWrapper from "../decorators/ctrlWrapper.js";
 import HttpError from "../helpers/HttpError.js";
-import exp from "constants";
+
 
 dotenv.config();
-const { JWT_SECRET, BASE_URL } = process.env;
+const { JWT_SECRET,  JWT_REFRESH_SECRET, BASE_URL } = process.env;
 const avatarsPath = path.resolve("public", "avatars");
 const toDelPath = path.resolve("public");
 
@@ -30,8 +29,8 @@ export const emailSender = async (email, verificationCode) => {
 
 export const findUser = (data) => User.findOne(data);
 
-export const validatePassword = async (password, hashPassword) =>
-  await bcrypt.compare(password, hashPassword);
+export const validateValue = async (value, hashValue) =>
+  await bcrypt.compare(value, hashValue);
 
 export const signup = async (data) => {
   const { email } = data;
@@ -43,7 +42,6 @@ export const signup = async (data) => {
   if (registredUser) {
     throw HttpError(409, "Email in use");
   }
-  console.log(email);
 
   await emailSender(email, verificationCode);
 
@@ -65,7 +63,7 @@ export const signin = async (data) => {
   if (!loggingInUser) {
     throw HttpError(401, "Email or password is wrong");
   }
-  const comparePassword = await validatePassword(
+  const comparePassword = await validateValue(
     password,
     loggingInUser.password
   );
@@ -75,13 +73,20 @@ export const signin = async (data) => {
   if (!loggingInUser.verify) {
     throw HttpError(401, "Email is not verified");
   }
+  
+  // if(loggingInUser.authinticate){
+  //   tokenRefresh(loggingInUser.authinticate)
+  // }
 
   const { _id: id } = loggingInUser;
   const payload = {
     id,
   };
-  const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "24h" });
-  await updateUser({ _id: id }, {authinticate: true});
+
+  
+  const tokens =await generateTokens(payload);
+
+  await updateUser({ _id: id }, {authinticate: tokens.hashRefreshToken});
   return {
     user: {
       name: loggingInUser.name,
@@ -89,8 +94,36 @@ export const signin = async (data) => {
       avatarURL: loggingInUser.avatarURL,
       verify: loggingInUser.verify,
     },
-    token: token,
+    accessToken: tokens.accessToken,
+    refreshToken: tokens.refreshToken,
   };
+};
+
+const generateTokens= async(payload)=>{
+  const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "8h" });
+  const refreshToken = jwt.sign(payload, JWT_REFRESH_SECRET, {expiresIn: "48h"})
+  const hashRefreshToken = await bcrypt.hash(refreshToken, 10);
+  return {accessToken, refreshToken, hashRefreshToken};
+};
+
+export const tokenRefresh = async (token) => {
+  const payload = jwt.verify(token, JWT_REFRESH_SECRET)
+  const storedToken = (await findUser({_id: payload.id})).authinticate
+if(!storedToken){
+  throw new HttpError(401, "Not authorized")
+}
+const compareRefreshTokens = await validateValue(
+  token,
+  storedToken,
+);
+
+if (!compareRefreshTokens) {
+  throw HttpError(401, "Invalid token");
+}
+const refreshedTokens = await generateTokens({_id: payload.id});
+await updateUser({ _id: payload.id }, {authinticate: refreshedTokens.hashRefreshToken});
+
+return refreshedTokens;
 };
 
 export const passwordUpdate = async (user, data) => {
@@ -104,7 +137,7 @@ export const passwordUpdate = async (user, data) => {
     throw HttpError(401, "There is no data to update");
   }
 
-  const comparePassword = await validatePassword(oldPassword, password);
+  const comparePassword = await validateValue(oldPassword, password);
   if (!comparePassword) {
     throw HttpError(400, "Invalid password");
   }

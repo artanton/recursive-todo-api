@@ -1,22 +1,6 @@
-import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
-import fs from "fs/promises";
-import path from "path";
-import Jimp from "jimp";
-import gravatar from "gravatar-url";
-import bcrypt from "bcrypt";
-
 import * as authService from "../services/authServices.js";
 import HttpError from "../helpers/HttpError.js";
 import ctrlWrapper from "../decorators/ctrlWrapper.js";
-import sendEmail from "../helpers/sendEmail.js";
-import { nanoid } from "nanoid";
-
-const avatarsPath = path.resolve("public", "avatars");
-const toDelPath = path.resolve("public");
-
-dotenv.config();
-const { JWT_SECRET, BASE_URL } = process.env;
 
 const signUp = async (req, res) => {
   const newUser = await authService.signup(req.body);
@@ -67,31 +51,43 @@ const resendVerify = async (req, res) => {
 };
 
 const updatePassword = async (req, res) => {
-const {_id, password} = req.user;
-const { oldPassword, newPassword } = req.body;
+  const { _id, password } = req.user;
+  const { oldPassword, newPassword } = req.body;
 
+  await authService.passwordUpdate(
+    { _id, password },
+    { oldPassword, newPassword }
+  );
 
-await authService.passwordUpdate(
-  {_id, password}, 
-  {oldPassword, newPassword}
-);
-  
- res.status(200).json({ message: "User password update success" });
+  res.status(200).json({ message: "User password update success" });
 };
 
 const updateAvatar = async (req, res) => {
   const { _id, avatarURL } = req.user;
   const { path: oldPath, filename } = req.file;
-  
+
   if (!req.file) {
     throw HttpError(401, "There is no data to update");
   }
 
-  const data = {_id, avatarURL, oldPath, filename };
+  const data = { _id, avatarURL, oldPath, filename };
 
   const newAvatar = await authService.avatarUpdate(data);
-  
+
   res.status(200).json(newAvatar);
+};
+
+const refreshToken = async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+  if (!refreshToken) {
+    throw HttpError(401, "Refresh token is required");
+  }
+  const refreshedTokens = await authService.tokenRefresh(refreshToken);
+
+  res.status(200).json({
+    accessToken: refreshedTokens.accessToken,
+    refreshToken: refreshedTokens.refreshToken,
+  });
 };
 
 const getCurrent = (req, res) => {
@@ -103,7 +99,7 @@ const getCurrent = (req, res) => {
 const logout = async (req, res) => {
   const { _id } = req.user;
 
-  await authService.updateUser({ _id }, {authinticate: false});
+  await authService.updateUser({ _id }, { authinticate: false });
   res.status(204).json("No Content");
 };
 
@@ -114,6 +110,7 @@ export default {
   resendVerify: ctrlWrapper(resendVerify),
   updateAvatar: ctrlWrapper(updateAvatar),
   updatePassword: ctrlWrapper(updatePassword),
+  refreshToken: ctrlWrapper(refreshToken),
   getCurrent: ctrlWrapper(getCurrent),
   logout: ctrlWrapper(logout),
 };

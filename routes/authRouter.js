@@ -49,6 +49,11 @@ authRouter.patch(
   authController.updatePassword
 );
 
+authRouter.patch(
+  "/refresh",
+authentificate, 
+authController.refreshToken);
+
 authRouter.get("/current", authentificate, authController.getCurrent);
 authRouter.post("/logout", authentificate, authController.logout);
 

@@ -32,8 +32,8 @@ const userSchema = new Schema(
       type: String,
     },
     authinticate:{
-      type: Boolean,
-      default: false,
+      type: String,
+      default: "",
     }
   },
   { versionKey: false, timestamps: true }
