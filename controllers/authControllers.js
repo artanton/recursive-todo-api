@@ -74,7 +74,7 @@ const updateAvatar = async (req, res) => {
 
   const newAvatar = await authService.avatarUpdate(data);
 
-  res.status(200).json(newAvatar);
+  res.status(200).json({newAvatar});
 };
 
 const refreshToken = async (req, res) => {

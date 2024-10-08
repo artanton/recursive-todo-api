@@ -8,8 +8,9 @@ export const addTask = async (data) => {
   return newTask;
 };
 
-export const updateTaskById = (filter, data) =>
-  Task.findOneAndUpdate(filter, data);
+export const updateTaskById = (filter, data) =>{
+ const result =Task.findOneAndUpdate(filter, data);
+ return result;}
 
 export const removeTask = async (props) => {
   const allTasks = await listTasks(props.owner);
