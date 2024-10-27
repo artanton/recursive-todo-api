@@ -10,9 +10,8 @@ import Jimp from "jimp";
 import gravatar from "gravatar-url";
 import HttpError from "../helpers/HttpError.js";
 
-
 dotenv.config();
-const { JWT_SECRET,  JWT_REFRESH_SECRET, BASE_URL } = process.env;
+const { JWT_SECRET, JWT_REFRESH_SECRET, BASE_URL } = process.env;
 const avatarsPath = path.resolve("public", "avatars");
 const toDelPath = path.resolve("public");
 
@@ -27,7 +26,7 @@ export const emailSender = async (email, verificationCode) => {
   await sendEmail(verifyEmail);
 };
 
-export const findUser = (data) => User.findOne(data);
+export const findUser = async (data) => await User.findOne(data);
 
 export const validateValue = async (value, hashValue) =>
   await bcrypt.compare(value, hashValue);
@@ -63,30 +62,24 @@ export const signin = async (data) => {
   if (!loggingInUser) {
     throw HttpError(401, "Email or password is wrong");
   }
-  const comparePassword = await validateValue(
-    password,
-    loggingInUser.password
-  );
+  const comparePassword = await validateValue(password, loggingInUser.password);
   if (!comparePassword) {
     throw HttpError(401, "Email or password is wrong");
   }
   if (!loggingInUser.verify) {
     throw HttpError(401, "Email is not verified");
   }
-  
-  // if(loggingInUser.authinticate){
-  //   tokenRefresh(loggingInUser.authinticate)
+
+  // if(loggingInUser.refreshToken){
+  //   tokenRefresh(loggingInUser.refreshToken)
   // }
 
   const { _id: id } = loggingInUser;
-  const payload = {
-    id,
-  };
+  const payload = { id };
 
-  
-  const tokens =await generateTokens(payload);
+  const tokens = await generateTokens(payload);
 
-  await updateUser({ _id: id }, {authinticate: tokens.hashRefreshToken});
+  await updateUser({ _id: id }, { refreshToken: tokens.hashRefreshToken });
   return {
     user: {
       name: loggingInUser.name,
@@ -99,31 +92,42 @@ export const signin = async (data) => {
   };
 };
 
-const generateTokens= async(payload)=>{
-  const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "8h" });
-  const refreshToken = jwt.sign(payload, JWT_REFRESH_SECRET, {expiresIn: "48h"})
+const generateTokens = async (payload) => {
+  const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "15s" });
+  const refreshToken = jwt.sign(payload, JWT_REFRESH_SECRET, {
+    expiresIn: "1000s",
+  });
   const hashRefreshToken = await bcrypt.hash(refreshToken, 10);
-  return {accessToken, refreshToken, hashRefreshToken};
+  return { accessToken, refreshToken, hashRefreshToken };
 };
 
 export const tokenRefresh = async (token) => {
-  const payload = jwt.verify(token, JWT_REFRESH_SECRET)
-  const storedToken = (await findUser({_id: payload.id})).authinticate
-if(!storedToken){
-  throw new HttpError(401, "Not authorized")
-}
-const compareRefreshTokens = await validateValue(
-  token,
-  storedToken,
-);
+  const payload = jwt.decode(token);
 
-if (!compareRefreshTokens) {
-  throw HttpError(401, "Invalid token");
-}
-const refreshedTokens = await generateTokens({_id: payload.id});
-await updateUser({ _id: payload.id }, {authinticate: refreshedTokens.hashRefreshToken});
+  const userToUpdate = await User.findOne({ _id: payload.id });
+  if(!userToUpdate){
+    throw new HttpError(401, "Not authorized");
+  };
 
-return refreshedTokens;
+  const storedToken = userToUpdate.refreshToken;
+
+  if (!storedToken) {
+    throw  HttpError(401, "Not authorized");
+  }
+  const compareRefreshTokens = await validateValue(token, storedToken);
+
+  if (!compareRefreshTokens) {
+    throw HttpError(401, "Not authorized");
+  }
+
+  const refreshedTokens = await generateTokens({ id: userToUpdate.id });
+
+  await updateUser(
+    { _id: payload.id },
+    { refreshToken: refreshedTokens.hashRefreshToken }
+  );
+
+  return refreshedTokens;
 };
 
 export const passwordUpdate = async (user, data) => {
@@ -149,7 +153,7 @@ export const passwordUpdate = async (user, data) => {
 
 export const avatarUpdate = async (data) => {
   const { _id, avatarURL, oldPath, filename } = data;
-
+  
   const image = await Jimp.read(oldPath);
   image.resize(250, 250).write(oldPath);
 
@@ -160,12 +164,12 @@ export const avatarUpdate = async (data) => {
 
   const isGravatar = avatarURL.split("/").includes("gravatar.com");
   if (!isGravatar) {
-    const oldAvatar = path.join(toDelPath, avatarURL);
-
-    await fs.rm(oldAvatar);
+    if (avatarURL) {
+      const oldAvatar = path.join(toDelPath, avatarURL);
+      await fs.rm(oldAvatar);
+    }
   }
-
-  await updateUser({ _id }, { newAvatar });
+  await updateUser({ _id }, { avatarURL: newAvatar });
 
   return { newAvatar };
 };

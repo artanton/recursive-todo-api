@@ -31,7 +31,7 @@ const userSchema = new Schema(
     verificationCode: {
       type: String,
     },
-    authinticate:{
+    refreshToken:{
       type: String,
       default: "",
     }

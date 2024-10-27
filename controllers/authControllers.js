@@ -15,7 +15,13 @@ const signUp = async (req, res) => {
 
 const signIn = async (req, res) => {
   const loggedInUser = await authService.signin(req.body);
-  res.json(loggedInUser);
+  const { user, refreshToken, accessToken } = loggedInUser;
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: false,
+    path: "/",
+  });
+  res.json({ user, accessToken });
 };
 
 const verify = async (req, res) => {
@@ -66,32 +72,45 @@ const updateAvatar = async (req, res) => {
   const { _id, avatarURL } = req.user;
   const { path: oldPath, filename } = req.file;
 
+  if (!req.user) {
+    throw HttpError(401, "Not authorized");
+  }
+
   if (!req.file) {
-    throw HttpError(401, "There is no data to update");
+    throw HttpError(400, "There is no data to update");
   }
 
   const data = { _id, avatarURL, oldPath, filename };
 
   const newAvatar = await authService.avatarUpdate(data);
-
-  res.status(200).json({newAvatar});
+ 
+  res.status(200).json(newAvatar);
 };
 
 const refreshToken = async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
+  
   if (!refreshToken) {
-    throw HttpError(401, "Refresh token is required");
+    throw HttpError(401, "Not authorized");
   }
   const refreshedTokens = await authService.tokenRefresh(refreshToken);
 
+  res.cookie("refreshToken", refreshedTokens.refreshToken, {
+    httpOnly: true,
+    secure: false,
+    path: "/",
+  });
+
   res.status(200).json({
     accessToken: refreshedTokens.accessToken,
-    refreshToken: refreshedTokens.refreshToken,
   });
 };
 
 const getCurrent = (req, res) => {
   const { name, email, avatarURL, verify } = req.user;
+  if (!user) {
+    throw HttpError(401, "Not authorized");
+  }
 
   res.json({ name, email, avatarURL, verify });
 };
@@ -99,7 +118,18 @@ const getCurrent = (req, res) => {
 const logout = async (req, res) => {
   const { _id } = req.user;
 
-  await authService.updateUser({ _id }, { authinticate: false });
+  await authService.updateUser({ _id }, { refreshToken: "" });
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: false,
+    path: "/",
+  });
+
+  // res.cookie('refreshToken',"", {
+  //   httpOnly: true,
+  //   secure: false,
+  //    path:"/"
+  // });
   res.status(204).json("No Content");
 };
 
