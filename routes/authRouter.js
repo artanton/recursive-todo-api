@@ -29,15 +29,15 @@ authRouter.post (
   "/verify", 
   validateBody(emailSchema),
   authController.resendVerify
-
+  
 );
 
 authRouter.patch(
   "/avatar",
   validateBody(avatarSchema),
-  upload.single("avatarURL"),
   authentificate,
-
+  upload.single("avatarURL"),
+  
   authController.updateAvatar
 );
 
@@ -45,13 +45,12 @@ authRouter.patch(
   "/update",
   validateBody(updateSchema),
   authentificate,
-
+  
   authController.updatePassword
 );
 
 authRouter.patch(
-  "/refresh",
-authentificate, 
+  "/regenerate",
 authController.refreshToken);
 
 authRouter.get("/current", authentificate, authController.getCurrent);
