@@ -83,26 +83,33 @@ const updateAvatar = async (req, res) => {
   const data = { _id, avatarURL, oldPath, filename };
 
   const newAvatar = await authService.avatarUpdate(data);
- 
+
   res.status(200).json(newAvatar);
 };
 
 const refreshToken = async (req, res) => {
+  // const { name, email, avatarURL, verify } = req.user;
+
+  // if (user) {
+  //   res.json({ name, email, avatarURL, verify });
+  // }
   const refreshToken = req.cookies.refreshToken;
-  
+  console.log(refreshToken);
+
   if (!refreshToken) {
     throw HttpError(401, "Not authorized");
   }
-  const refreshedTokens = await authService.tokenRefresh(refreshToken);
+  const refreshedUser = await authService.tokenRefresh(refreshToken);
 
-  res.cookie("refreshToken", refreshedTokens.refreshToken, {
+  res.cookie("refreshToken", refreshedUser.refreshToken, {
     httpOnly: true,
     secure: false,
     path: "/",
   });
 
   res.status(200).json({
-    accessToken: refreshedTokens.accessToken,
+    user: refreshedUser.user,
+    accessToken: refreshedUser.accessToken,
   });
 };
 

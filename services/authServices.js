@@ -122,12 +122,21 @@ export const tokenRefresh = async (token) => {
 
   const refreshedTokens = await generateTokens({ id: userToUpdate.id });
 
-  await updateUser(
+  const updatedUser = await updateUser(
     { _id: payload.id },
     { refreshToken: refreshedTokens.hashRefreshToken }
   );
-
-  return refreshedTokens;
+  
+  return {
+    user: {
+      email: updatedUser.email,
+      name: updatedUser.name,
+      avatarURL: updatedUser.avatarURL,
+      verify: updatedUser.verify,
+    },
+    accessToken: refreshedTokens.accessToken,
+    refreshToken: refreshedTokens.refreshToken,
+  };
 };
 
 export const passwordUpdate = async (user, data) => {
