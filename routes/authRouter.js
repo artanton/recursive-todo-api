@@ -49,7 +49,7 @@ authRouter.patch(
   authController.updatePassword
 );
 
-authRouter.patch(
+authRouter.get(
   "/regenerate",
 authController.refreshToken);
 

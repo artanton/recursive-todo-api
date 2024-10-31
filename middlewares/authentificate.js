@@ -10,6 +10,7 @@ const {JWT_SECRET}=process.env;
 
 const authentificate = async (req, res, next)=>{
 const {authorization}= req.headers;
+
 if(!authorization){
 return next(HttpError(401,"Not authorized"));
 }
@@ -20,7 +21,9 @@ if(bearer !=="Bearer"){
 try {
     
     const {id}= jwt.verify(accessToken, JWT_SECRET);
+   
     const user= await findUser ({_id:id});
+    
     if(!user){
         
         return next (HttpError(401,"Not authorized"));
