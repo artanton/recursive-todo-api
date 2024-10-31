@@ -93,18 +93,21 @@ export const signin = async (data) => {
 };
 
 const generateTokens = async (payload) => {
-  const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "15s" });
+  const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "10s" });
   const refreshToken = jwt.sign(payload, JWT_REFRESH_SECRET, {
-    expiresIn: "1000s",
+    expiresIn: "200s",
   });
   const hashRefreshToken = await bcrypt.hash(refreshToken, 10);
   return { accessToken, refreshToken, hashRefreshToken };
 };
 
 export const tokenRefresh = async (token) => {
-  const payload = jwt.decode(token);
+  try {
+    const {id}= jwt.verify(token, JWT_REFRESH_SECRET);
+  // const payload = jwt.decode(token);
+  console.log(id);
 
-  const userToUpdate = await User.findOne({ _id: payload.id });
+  const userToUpdate = await User.findOne({ _id:id });
   if(!userToUpdate){
     throw new HttpError(401, "Not authorized");
   };
@@ -123,7 +126,7 @@ export const tokenRefresh = async (token) => {
   const refreshedTokens = await generateTokens({ id: userToUpdate.id });
 
   const updatedUser = await updateUser(
-    { _id: payload.id },
+    { _id: id },
     { refreshToken: refreshedTokens.hashRefreshToken }
   );
   
@@ -137,6 +140,11 @@ export const tokenRefresh = async (token) => {
     accessToken: refreshedTokens.accessToken,
     refreshToken: refreshedTokens.refreshToken,
   };
+    
+  } catch (error) {
+   throw HttpError(401,error.message);
+  }
+  
 };
 
 export const passwordUpdate = async (user, data) => {
