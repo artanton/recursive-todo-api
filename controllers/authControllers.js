@@ -3,7 +3,7 @@ import HttpError from "../helpers/HttpError.js";
 import ctrlWrapper from "../decorators/ctrlWrapper.js";
 
 const signUp = async (req, res) => {
- const newUser = await authService.signup(req.body);
+  const newUser = await authService.signup(req.body);
 
   res.status(201).json({
     email: newUser.email,
@@ -16,7 +16,7 @@ const signUp = async (req, res) => {
 const signIn = async (req, res) => {
   const loggedInUser = await authService.signin(req.body);
   const { user, refreshToken, accessToken } = loggedInUser;
-  console.log(refreshToken);
+
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
     secure: false,
@@ -89,9 +89,8 @@ const updateAvatar = async (req, res) => {
 };
 
 const refreshToken = async (req, res) => {
-
   const refreshToken = req.cookies.refreshToken;
-console.log(refreshToken);
+
   if (!refreshToken) {
     throw HttpError(401, "Not authorized");
   }

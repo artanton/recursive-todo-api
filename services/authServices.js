@@ -95,7 +95,7 @@ export const signin = async (data) => {
 const generateTokens = async (payload) => {
   const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "10s" });
   const refreshToken = jwt.sign(payload, JWT_REFRESH_SECRET, {
-    expiresIn: "200s",
+    expiresIn: "30s",
   });
   const hashRefreshToken = await bcrypt.hash(refreshToken, 10);
   return { accessToken, refreshToken, hashRefreshToken };
@@ -105,7 +105,7 @@ export const tokenRefresh = async (token) => {
   try {
     const {id}= jwt.verify(token, JWT_REFRESH_SECRET);
   // const payload = jwt.decode(token);
-  console.log(id);
+ 
 
   const userToUpdate = await User.findOne({ _id:id });
   if(!userToUpdate){
