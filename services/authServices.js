@@ -93,9 +93,9 @@ export const signin = async (data) => {
 };
 
 const generateTokens = async (payload) => {
-  const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "10s" });
+  const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "60s" });
   const refreshToken = jwt.sign(payload, JWT_REFRESH_SECRET, {
-    expiresIn: "30s",
+    expiresIn: "600s",
   });
   const hashRefreshToken = await bcrypt.hash(refreshToken, 10);
   return { accessToken, refreshToken, hashRefreshToken };
