@@ -9,6 +9,7 @@ import path from "path";
 import Jimp from "jimp";
 import gravatar from "gravatar-url";
 import HttpError from "../helpers/HttpError.js";
+import sharp from 'sharp'
 
 dotenv.config();
 const { JWT_SECRET, JWT_REFRESH_SECRET, BASE_URL } = process.env;
@@ -33,7 +34,7 @@ export const validateValue = async (value, hashValue) =>
 
 export const signup = async (data) => {
   const { email } = data;
-
+console.log({email});
   const avatarURL = gravatar(email, { s: 250 });
   const verificationCode = nanoid();
 
@@ -45,12 +46,13 @@ export const signup = async (data) => {
   await emailSender(email, verificationCode);
 
   const hashPassword = await bcrypt.hash(data.password, 10);
-  User.create({
+  const newUser = await User.create({
     ...data,
     password: hashPassword,
     verificationCode: verificationCode,
+    avatarURL: avatarURL,
   });
-  const newUser = await updateUser({ email }, { avatarURL });
+  // const newUser = await updateUser({ email }, { avatarURL });
 
   return newUser;
 };
@@ -93,7 +95,7 @@ export const signin = async (data) => {
 };
 
 const generateTokens = async (payload) => {
-  const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "60s" });
+  const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "300s" });
   const refreshToken = jwt.sign(payload, JWT_REFRESH_SECRET, {
     expiresIn: "600s",
   });
@@ -171,13 +173,22 @@ export const passwordUpdate = async (user, data) => {
 export const avatarUpdate = async (data) => {
   const { _id, avatarURL, oldPath, filename } = data;
   
-  const image = await Jimp.read(oldPath);
-  image.resize(250, 250).write(oldPath);
-
+  // const image = await Jimp.read(oldPath);
+  // image.cover(250, 250, ).write(oldPath);
+  
   const newPath = path.join(avatarsPath, filename);
+  await sharp(oldPath)
+  .resize(250, 250, { fit: 'cover' })
+  .rotate()
+  // .withMetadata({ orientation: 1 }) // Force orientation to default (ignore EXIF)
+  .toFile(newPath);
 
-  await fs.rename(oldPath, newPath);
-  const newAvatar = path.join("avatars", filename);
+ 
+
+  await fs.rm(oldPath);
+  const newAva = path.join("avatars", filename);
+  const newAvatar = newAva.replace(/\\/g, '/');
+  console.log(newAvatar);
 
   const isGravatar = avatarURL.split("/").includes("gravatar.com");
   if (!isGravatar) {

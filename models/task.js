@@ -3,9 +3,13 @@ import { handleSaveError, setUpdateSettings } from "./hooks.js";
 
 const taskSchema = new Schema(
   {
-    text: {
+    title: {
       type: String,
       required: [true, "Set task text"],
+    },
+    text: {
+      type: String,
+      
     },
     date: {
       type: String,
@@ -17,6 +21,10 @@ const taskSchema = new Schema(
     },
     parentId: {
       type: String,
+      required: true,
+    },
+    done: {
+      type: Boolean,
       required: true,
     },
     owner:{

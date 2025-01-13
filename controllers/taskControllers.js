@@ -11,6 +11,7 @@ const getAllTasks = async (req, res) => {
 };
 
 const createTask = async (req, res) => {
+  console.log('contoller', req.body);
   const { _id: owner } = req.user;
   const result = await tasksService.addTask({ ...req.body, owner });
 
@@ -20,8 +21,8 @@ const createTask = async (req, res) => {
 const updateTask = async (req, res) => {
   const { _id: owner } = req.user;
   const data = req.body;
-  if (!data.text) {
-    throw HttpError(400, "Body must have updated text");
+  if (!data.text&&!data.title&&!data.date&&!data.done) {
+    throw HttpError(400, "Body must have updated data");
   }
   const { id } = req.params;
 

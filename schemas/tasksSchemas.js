@@ -1,15 +1,19 @@
 import Joi from "joi";
 
 export const createTaskSchema = Joi.object({
-  text: Joi.string().required(),
+  done: Joi.boolean().required(),
+  title: Joi.string().required(),
   date: Joi.string().required(),
   subLevel: Joi.number(),
   parentId: Joi.string().required(),
+  text: Joi.string().allow(""),
  
 });
 
 export const updateTaskSchema = Joi.object({
-  text: Joi.string().required(),
-  
+  title: Joi.string(),
+  text: Joi.string(),
+  date: Joi.string(),
+  done: Joi.boolean(),
  });
 

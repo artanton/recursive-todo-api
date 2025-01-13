@@ -50,7 +50,7 @@ authRouter.patch(
 );
 
 authRouter.get(
-  "/regenerate",
+  "/refresh",
 authController.refreshToken);
 
 authRouter.get("/current", authentificate, authController.getCurrent);
