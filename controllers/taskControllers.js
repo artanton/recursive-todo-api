@@ -11,7 +11,6 @@ const getAllTasks = async (req, res) => {
 };
 
 const createTask = async (req, res) => {
-  console.log('contoller', req.body);
   const { _id: owner } = req.user;
   const result = await tasksService.addTask({ ...req.body, owner });
 
@@ -21,14 +20,14 @@ const createTask = async (req, res) => {
 const updateTask = async (req, res) => {
   const { _id: owner } = req.user;
   const data = req.body;
-  if (!data.text&&!data.title&&!data.date&&!data.done) {
+  if (!data.text&&!data.title&&!data.date&&!data.hasOwnProperty('done')) {
     throw HttpError(400, "Body must have updated data");
   }
   const { id } = req.params;
 
   const result = await tasksService.updateTaskById(
     { _id: id, owner },
-    req.body
+    data
   );
   if (!result) {
     throw HttpError(404, `Not found`);

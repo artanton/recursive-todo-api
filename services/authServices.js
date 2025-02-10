@@ -97,7 +97,7 @@ export const signin = async (data) => {
 const generateTokens = async (payload) => {
   const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "300s" });
   const refreshToken = jwt.sign(payload, JWT_REFRESH_SECRET, {
-    expiresIn: "600s",
+    expiresIn: "10000s",
   });
   const hashRefreshToken = await bcrypt.hash(refreshToken, 10);
   return { accessToken, refreshToken, hashRefreshToken };
@@ -172,10 +172,7 @@ export const passwordUpdate = async (user, data) => {
 
 export const avatarUpdate = async (data) => {
   const { _id, avatarURL, oldPath, filename } = data;
-  
-  // const image = await Jimp.read(oldPath);
-  // image.cover(250, 250, ).write(oldPath);
-  
+   
   const newPath = path.join(avatarsPath, filename);
   await sharp(oldPath)
   .resize(250, 250, { fit: 'cover' })
@@ -188,8 +185,6 @@ export const avatarUpdate = async (data) => {
   await fs.rm(oldPath);
   const newAva = path.join("avatars", filename);
   const newAvatar = newAva.replace(/\\/g, '/');
-  console.log(newAvatar);
-
   const isGravatar = avatarURL.split("/").includes("gravatar.com");
   if (!isGravatar) {
     if (avatarURL) {

@@ -15,5 +15,7 @@ export const updateTaskSchema = Joi.object({
   text: Joi.string(),
   date: Joi.string(),
   done: Joi.boolean(),
+  subLevel: Joi.number(),
+  parentId: Joi.string(),
  });
 
